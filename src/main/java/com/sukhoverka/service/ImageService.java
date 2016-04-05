@@ -15,7 +15,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 
 @Path("/logo")
@@ -30,16 +29,14 @@ public class ImageService {
     @Produces("image/png")
     public Response getUserLogo(@PathParam("id") Integer userId) throws Exception {
 
-        byte[] logoBytes = imageDao.getUserLogo(userId);
-        if(logoBytes == null) {
-            return Response.status(500)
+        String pathToFile = imageDao.getUserLogo(userId);
+        System.out.println(pathToFile);
+        if(pathToFile == null) {
+            return Response.status(404)
                     .entity("user with id = " + userId + " does not exist")
                     .build();
         } else {
-            FileOutputStream fileOutputStream =
-                    new FileOutputStream("tmp.jpg");
-            fileOutputStream.write(logoBytes);
-            return Response.ok((Object) new File("tmp.jpg")).build();
+            return Response.ok(new File(pathToFile)).build();
         }
 
     }
@@ -48,7 +45,7 @@ public class ImageService {
     @PUT
     @Path("{userId}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public Response createUserLogo(
+    public Response createUserLogo(@PathParam("userId") int userId,
                                @FormDataParam("logo") InputStream uploadedInputStream,
                                @FormDataParam("logo") FormDataContentDisposition metaInfo) {
         int responseStatus;
@@ -59,7 +56,7 @@ public class ImageService {
         } else {
             responseStatus = 200;
             responseMsg = "File Successfully uploaded";
-            imageDao.saveUserLogo(1, uploadedInputStream);
+            imageDao.saveUserLogo(userId, uploadedInputStream, metaInfo);
         }
 
         return Response.status(responseStatus)
